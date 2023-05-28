@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 # events and sync should be imported to avoid the error:
 # TypeError: 'coroutine' object is not iterable
 from telethon import TelegramClient, events, sync
+from tqdm.asyncio import tqdm
 
 from database import createDB, getDBconn, insert_message
 
@@ -40,7 +41,7 @@ load_dotenv()
 api_id = int(os.getenv("API_ID"))
 api_hash = os.getenv("API_HASH")
 
-LAST_MESSAGES_NUMBER = 200
+LAST_MESSAGES_NUMBER = 10000
 BOT_NAME = "rus_fin_kyyti"  # TODO to env
 # TODO desired date pattern as a command line argument
 TRIP_DATE_PATTERN = re.compile(r"Дата: (\d\d.\d\d.\d\d\d\d)")  # group 1 should be a date
@@ -74,7 +75,9 @@ dbConnection = getDBconn("./tg_drivers_bot.db")
 dbCursor = dbConnection.cursor()
 
 
-for mes in get_last_n_mes():
+for mes in tqdm(get_last_n_mes()):
+    if not mes.message:
+        continue
     trip_date = extract_trip_date(mes.message)
     torussia, tofinland, isdriver = extract_hashtags(mes.message)
     if not (torussia or tofinland):
